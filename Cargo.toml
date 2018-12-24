@@ -1,0 +1,7 @@
+[package]
+name = "rust-poker"
+version = "0.1.0"
+authors = ["Gregor MacDougall <gmacdougall0+github@gmail.com>"]
+edition = "2018"
+
+[dependencies]
