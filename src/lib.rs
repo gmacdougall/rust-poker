@@ -29,7 +29,7 @@ struct Card {
 }
 
 impl Card {
-    fn parse(str: String) -> Card {
+    fn parse(str: String) -> Result<Card, String> {
         let mut split_str = str.chars();
 
         let rank = match split_str.next() {
@@ -47,9 +47,9 @@ impl Card {
                 'Q' => Rank::Queen,
                 'K' => Rank::King,
                 'A' => Rank::Ace,
-                _ => panic!("Invalid Rank on {}", str),
-            }
-            None => panic!("Missing Rank on {}", str),
+                _ => return Err(String::from("Invalid Rank")),
+            },
+            None => return Err(String::from("No Rank Found")),
         };
 
         let suit = match split_str.next() {
@@ -58,15 +58,17 @@ impl Card {
                 'D' => Suit::Diamonds,
                 'H' => Suit::Hearts,
                 'S' => Suit::Spades,
-                _ => panic!("Invalid Suit on {}", str),
-            }
-            None => panic!("No Suit specified on {}", str),
+                _ => return Err(String::from("Invalid Suit")),
+            },
+            None => return Err(String::from("No Suit Found")),
         };
 
-        Card {
-            rank,
-            suit,
-        }
+        Ok(
+            Card {
+                rank,
+                suit,
+            }
+        )
     }
 }
 
@@ -86,33 +88,47 @@ mod tests {
 
     #[test]
     fn test_parse_3h() {
-        let card = Card::parse(String::from("3H"));
+        let card = Card::parse(String::from("3H")).unwrap();
         assert_eq!(Rank::Three, card.rank);
         assert_eq!(Suit::Hearts, card.suit);
     }
 
     #[test]
     fn test_parse_kc() {
-        let card = Card::parse(String::from("KC"));
+        let card = Card::parse(String::from("KC")).unwrap();
         assert_eq!(Rank::King, card.rank);
         assert_eq!(Suit::Clubs, card.suit);
     }
 
     #[test]
-    #[should_panic]
     fn test_parse_invalid_rank() {
-        Card::parse(String::from("1C"));
+        match Card::parse(String::from("1C")) {
+            Ok(_) => assert!(false),
+            Err(m) => assert_eq!(m, "Invalid Rank"),
+        };
     }
 
     #[test]
-    #[should_panic]
+    fn test_parse_invalid_suit() {
+        match Card::parse(String::from("9P")) {
+            Ok(_) => assert!(false),
+            Err(m) => assert_eq!(m, "Invalid Suit"),
+        };
+    }
+
+    #[test]
     fn test_parse_missing_suit() {
-        Card::parse(String::from("8"));
+        match Card::parse(String::from("8")) {
+            Ok(_) => assert!(false),
+            Err(m) => assert_eq!(m, "No Suit Found"),
+        };
     }
 
     #[test]
-    #[should_panic]
     fn test_parse_missing_everything() {
-        Card::parse(String::from(""));
+        match Card::parse(String::from("")) {
+            Ok(_) => assert!(false),
+            Err(m) => assert_eq!(m, "No Rank Found"),
+        };
     }
 }
