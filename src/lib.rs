@@ -29,7 +29,7 @@ struct Card {
 }
 
 impl Card {
-    fn parse(str: String) -> Result<Card, String> {
+    fn parse(str: &str) -> Result<Card, String> {
         let mut split_str = str.chars();
 
         let rank = match split_str.next() {
@@ -88,21 +88,21 @@ mod tests {
 
     #[test]
     fn test_parse_3h() {
-        let card = Card::parse(String::from("3H")).unwrap();
+        let card = Card::parse("3H").unwrap();
         assert_eq!(Rank::Three, card.rank);
         assert_eq!(Suit::Hearts, card.suit);
     }
 
     #[test]
     fn test_parse_kc() {
-        let card = Card::parse(String::from("KC")).unwrap();
+        let card = Card::parse("KC").unwrap();
         assert_eq!(Rank::King, card.rank);
         assert_eq!(Suit::Clubs, card.suit);
     }
 
     #[test]
     fn test_parse_invalid_rank() {
-        match Card::parse(String::from("1C")) {
+        match Card::parse("1C") {
             Ok(_) => assert!(false),
             Err(m) => assert_eq!(m, "Invalid Rank"),
         };
@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn test_parse_invalid_suit() {
-        match Card::parse(String::from("9P")) {
+        match Card::parse("9P") {
             Ok(_) => assert!(false),
             Err(m) => assert_eq!(m, "Invalid Suit"),
         };
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_parse_missing_suit() {
-        match Card::parse(String::from("8")) {
+        match Card::parse("8") {
             Ok(_) => assert!(false),
             Err(m) => assert_eq!(m, "No Suit Found"),
         };
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_parse_missing_everything() {
-        match Card::parse(String::from("")) {
+        match Card::parse("") {
             Ok(_) => assert!(false),
             Err(m) => assert_eq!(m, "No Rank Found"),
         };
