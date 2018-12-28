@@ -72,6 +72,26 @@ impl Card {
     }
 }
 
+struct Hand(Card, Card, Card, Card, Card);
+
+impl Hand {
+    fn parse(str: &str) -> Result<Hand, String> {
+        // FIXME: Dangerous unwrap
+        let mut iter = str.split(" ").map(|c| Card::parse(c).unwrap());
+
+        Ok(
+            Hand(
+                // FIXME: Dangerous unwrap
+                iter.next().unwrap(),
+                iter.next().unwrap(),
+                iter.next().unwrap(),
+                iter.next().unwrap(),
+                iter.next().unwrap(),
+            )
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,5 +150,44 @@ mod tests {
             Ok(_) => assert!(false),
             Err(m) => assert_eq!(m, "No Rank Found"),
         };
+    }
+
+    #[test]
+    fn hand_contains_five_cards() {
+        let hand = Hand(
+            Card::parse("2C").unwrap(),
+            Card::parse("2D").unwrap(),
+            Card::parse("6C").unwrap(),
+            Card::parse("9H").unwrap(),
+            Card::parse("AS").unwrap(),
+        );
+        assert_eq!(Rank::Two, hand.0.rank);
+        assert_eq!(Rank::Two, hand.1.rank);
+        assert_eq!(Rank::Six, hand.2.rank);
+        assert_eq!(Rank::Nine, hand.3.rank);
+        assert_eq!(Rank::Ace, hand.4.rank);
+
+        assert_eq!(Suit::Clubs, hand.0.suit);
+        assert_eq!(Suit::Diamonds, hand.1.suit);
+        assert_eq!(Suit::Clubs, hand.2.suit);
+        assert_eq!(Suit::Hearts, hand.3.suit);
+        assert_eq!(Suit::Spades, hand.4.suit);
+    }
+
+    #[test]
+    fn hand_parses_correctly() {
+        let hand = Hand::parse("2C 2D 6C 9H AS").unwrap();
+
+        assert_eq!(Rank::Two, hand.0.rank);
+        assert_eq!(Rank::Two, hand.1.rank);
+        assert_eq!(Rank::Six, hand.2.rank);
+        assert_eq!(Rank::Nine, hand.3.rank);
+        assert_eq!(Rank::Ace, hand.4.rank);
+
+        assert_eq!(Suit::Clubs, hand.0.suit);
+        assert_eq!(Suit::Diamonds, hand.1.suit);
+        assert_eq!(Suit::Clubs, hand.2.suit);
+        assert_eq!(Suit::Hearts, hand.3.suit);
+        assert_eq!(Suit::Spades, hand.4.suit);
     }
 }
