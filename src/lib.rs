@@ -73,26 +73,17 @@ impl Card {
 }
 
 struct Hand {
-    cards: [Card; 5],
+    cards: Vec<Card>,
 }
 
 impl Hand {
     fn parse(str: &str) -> Result<Hand, String> {
-        // FIXME: Dangerous unwrap
-        let mut iter = str.split(" ").map(|c| Card::parse(c).unwrap());
+        let vec: Vec<Card> = match str.split(" ").map(|c| Card::parse(c)).collect() {
+            Ok(c) => c,
+            Err(e) => return Err(e),
+        };
 
-        Ok(
-            Hand {
-                cards: [
-                    // FIXME: Dangerous unwrap
-                    iter.next().unwrap(),
-                    iter.next().unwrap(),
-                    iter.next().unwrap(),
-                    iter.next().unwrap(),
-                    iter.next().unwrap(),
-                ]
-            }
-        )
+        Ok(Hand { cards: vec })
     }
 }
 
@@ -159,7 +150,7 @@ mod tests {
     #[test]
     fn hand_contains_five_cards() {
         let hand = Hand {
-            cards: [
+            cards: vec![
                 Card::parse("2C").unwrap(),
                 Card::parse("2D").unwrap(),
                 Card::parse("6C").unwrap(),
