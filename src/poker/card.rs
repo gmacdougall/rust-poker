@@ -15,12 +15,12 @@ pub enum Rank {
     Ace,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Suit {
-    Clubs,
-    Diamonds,
-    Hearts,
-    Spades,
+    Clubs = 0,
+    Diamonds = 1,
+    Hearts = 2,
+    Spades = 3,
 }
 
 #[derive(Clone)]

@@ -1,12 +1,22 @@
+use std::collections::HashSet;
+
 use crate::poker::card::Card;
 use crate::poker::card::Rank;
 use crate::poker::card::Suit;
 
 pub struct Hand {
-    cards: [Card; 5],
+    cards: Vec<Card>,
 }
 
 impl Hand {
+    fn is_flush(&self) -> bool {
+        self.suits().len() == 1
+    }
+
+    fn suits(&self) -> HashSet<Suit> {
+        self.cards.iter().cloned().map(|c| c.suit).collect()
+    }
+
     fn parse(str: &str) -> Result<Hand, String> {
         let vec: Vec<Card> = match str.split(" ").map(|c| Card::parse(c)).collect() {
             Ok(c) => c,
@@ -17,21 +27,7 @@ impl Hand {
             return Err(String::from("Wrong Length!"));
         }
 
-        Ok(Hand { cards: Hand::arr_from_vec(vec) })
-    }
-
-    fn arr_from_vec(vec: Vec<Card>) -> [Card; 5] {
-        // TODO: Figure out if I can not create real objects
-        let mut dst = [
-            Card { rank: Rank::Two, suit: Suit::Hearts },
-            Card { rank: Rank::Two, suit: Suit::Hearts },
-            Card { rank: Rank::Two, suit: Suit::Hearts },
-            Card { rank: Rank::Two, suit: Suit::Hearts },
-            Card { rank: Rank::Two, suit: Suit::Hearts },
-        ];
-
-        dst.clone_from_slice(&vec[..]);
-        dst
+        Ok(Hand { cards: vec })
     }
 }
 
@@ -42,7 +38,7 @@ mod tests {
     #[test]
     fn hand_contains_five_cards() {
         let hand = Hand {
-            cards: [
+            cards: vec![
                 Card::parse("2C").unwrap(),
                 Card::parse("2D").unwrap(),
                 Card::parse("6C").unwrap(),
@@ -95,6 +91,18 @@ mod tests {
             Ok(_) => assert!(false "6 cards should not succeed"),
             Err(msg) => assert_eq!(msg, "Wrong Length!"),
         }
+    }
+
+    #[test]
+    fn flush_when_all_suits_the_same() {
+        let hand = Hand::parse("2C 3C 6C 9C AC").unwrap();
+        assert!(hand.is_flush());
+    }
+
+    #[test]
+    fn not_flush_when_all_suits_not_the_same() {
+        let hand = Hand::parse("2C 3C 6H 9C AC").unwrap();
+        assert!(!hand.is_flush());
     }
 }
 
