@@ -9,36 +9,7 @@ pub struct Hand {
 }
 
 impl Hand {
-    fn is_flush(&self) -> bool {
-        self.is_all_same_suit()
-    }
-
-    fn is_straight(&self) -> bool {
-        self.is_all_consecutive()
-    }
-
-    fn is_all_consecutive(&self) -> bool {
-        let mut ranks: Vec<Rank> = self.cards.iter().cloned().map(|c| c.rank).collect();
-        ranks.sort();
-        ranks.dedup();
-        if ranks.len() != 5 {
-            return false;
-        }
-        (ranks[4].value() - ranks[0].value() == 4) ||
-            (ranks[3] == Rank::Five && ranks[4] == Rank::Ace)
-    }
-
-    fn is_all_same_suit(&self) -> bool {
-        let suit = &self.cards[0].suit;
-        for c in &self.cards {
-            if &c.suit != suit {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn parse(str: &str) -> Result<Hand, String> {
+    pub fn parse(str: &str) -> Result<Hand, String> {
         let vec: Vec<Card> = match str.split(" ").map(|c| Card::parse(c)).collect() {
             Ok(c) => c,
             Err(e) => return Err(e),
@@ -49,6 +20,39 @@ impl Hand {
         }
 
         Ok(Hand { cards: vec })
+    }
+
+    pub fn is_pair(&self) -> bool {
+        self.rank_sets().len() == 4
+    }
+
+    pub fn is_flush(&self) -> bool {
+        self.is_all_same_suit()
+    }
+
+    pub fn is_straight(&self) -> bool {
+        self.is_all_consecutive()
+    }
+
+    fn rank_sets(&self) -> Vec<Rank> {
+        let mut ranks: Vec<Rank> = self.cards.iter().cloned().map(|c| c.rank).collect();
+        ranks.sort();
+        ranks.dedup();
+        ranks
+    }
+
+    fn is_all_consecutive(&self) -> bool {
+        let ranks: Vec<Rank> = self.rank_sets();
+        if ranks.len() != 5 {
+            return false;
+        }
+        (ranks[4].value() - ranks[0].value() == 4) ||
+            (ranks[3] == Rank::Five && ranks[4] == Rank::Ace)
+    }
+
+    fn is_all_same_suit(&self) -> bool {
+        let suit = &self.cards[0].suit;
+        self.cards.iter().all(|c| &c.suit == suit)
     }
 }
 
@@ -139,9 +143,15 @@ mod tests {
     }
 
     #[test]
-    fn not_straight_when_not_all_consecutive() {
-        let hand = Hand::parse("2C 3C 9C 5D 6S").unwrap();
-        assert!(!hand.is_straight());
+    fn test_not_pair() {
+        let hand = Hand::parse("2C JS 9C 5D 6S").unwrap();
+        assert!(!hand.is_pair());
+    }
+
+    #[test]
+    fn test_pair() {
+        let hand = Hand::parse("2C 2S 9C 5D 6S").unwrap();
+        assert!(hand.is_pair());
     }
 }
 
