@@ -10,11 +10,32 @@ pub struct Hand {
 
 impl Hand {
     fn is_flush(&self) -> bool {
-        self.suits().len() == 1
+        self.is_all_same_suit()
     }
 
-    fn suits(&self) -> HashSet<Suit> {
-        self.cards.iter().cloned().map(|c| c.suit).collect()
+    fn is_straight(&self) -> bool {
+        self.is_all_consecutive()
+    }
+
+    fn is_all_consecutive(&self) -> bool {
+        let mut ranks: Vec<Rank> = self.cards.iter().cloned().map(|c| c.rank).collect();
+        ranks.sort();
+        ranks.dedup();
+        if ranks.len() != 5 {
+            return false;
+        }
+        (ranks[4].value() - ranks[0].value() == 4) ||
+            (ranks[3] == Rank::Five && ranks[4] == Rank::Ace)
+    }
+
+    fn is_all_same_suit(&self) -> bool {
+        let suit = &self.cards[0].suit;
+        for c in &self.cards {
+            if &c.suit != suit {
+                return false;
+            }
+        }
+        true
     }
 
     fn parse(str: &str) -> Result<Hand, String> {
@@ -103,6 +124,24 @@ mod tests {
     fn not_flush_when_all_suits_not_the_same() {
         let hand = Hand::parse("2C 3C 6H 9C AC").unwrap();
         assert!(!hand.is_flush());
+    }
+
+    #[test]
+    fn straight_when_all_consecutive() {
+        let hand = Hand::parse("6C 3C 4C 5D 2S").unwrap();
+        assert!(hand.is_straight());
+    }
+
+    #[test]
+    fn wraparound_straight() {
+        let hand = Hand::parse("AC 3C 4C 5D 2S").unwrap();
+        assert!(hand.is_straight());
+    }
+
+    #[test]
+    fn not_straight_when_not_all_consecutive() {
+        let hand = Hand::parse("2C 3C 9C 5D 6S").unwrap();
+        assert!(!hand.is_straight());
     }
 }
 
