@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::poker::card::Card;
@@ -26,6 +27,14 @@ impl Hand {
         self.rank_sets().len() == 4
     }
 
+    pub fn is_two_pair(&self) -> bool {
+        self.rank_sets().len() == 3 && self.most_common_rank_size() == 2
+    }
+
+    pub fn is_three_of_a_kind(&self) -> bool {
+        self.rank_sets().len() == 3 && self.most_common_rank_size() == 3
+    }
+
     pub fn is_flush(&self) -> bool {
         self.is_all_same_suit()
     }
@@ -39,6 +48,16 @@ impl Hand {
         ranks.sort();
         ranks.dedup();
         ranks
+    }
+
+    fn most_common_rank_size(&self) -> i32 {
+        let mut frequencies = HashMap::new();
+
+        for c in &self.cards {
+            let stat = frequencies.entry(&c.rank).or_insert(0);
+            *stat += 1;
+        }
+        frequencies.values().max().unwrap().clone()
     }
 
     fn is_all_consecutive(&self) -> bool {
@@ -152,6 +171,30 @@ mod tests {
     fn test_pair() {
         let hand = Hand::parse("2C 2S 9C 5D 6S").unwrap();
         assert!(hand.is_pair());
+    }
+
+    #[test]
+    fn test_two_pair() {
+        let hand = Hand::parse("2C 5S 9C 5D 9S").unwrap();
+        assert!(hand.is_two_pair());
+    }
+
+    #[test]
+    fn test_not_two_pair() {
+        let hand = Hand::parse("5C 5S KC 5D 9S").unwrap();
+        assert!(!hand.is_two_pair());
+    }
+
+    #[test]
+    fn test_not_three_of_a_kind() {
+        let hand = Hand::parse("2C 5S 9C 5D 9S").unwrap();
+        assert!(!hand.is_three_of_a_kind());
+    }
+
+    #[test]
+    fn test_three_of_a_kind() {
+        let hand = Hand::parse("5C 5S KC 5D 9S").unwrap();
+        assert!(hand.is_three_of_a_kind());
     }
 }
 
