@@ -35,12 +35,24 @@ impl Hand {
         self.rank_sets().len() == 3 && self.most_common_rank_size() == 3
     }
 
+    pub fn is_straight(&self) -> bool {
+        self.is_all_consecutive()
+    }
+
     pub fn is_flush(&self) -> bool {
         self.is_all_same_suit()
     }
 
-    pub fn is_straight(&self) -> bool {
-        self.is_all_consecutive()
+    pub fn is_full_house(&self) -> bool {
+        self.rank_sets().len() == 2 && self.most_common_rank_size() == 3
+    }
+
+    pub fn is_four_of_a_kind(&self) -> bool {
+        self.rank_sets().len() == 2 && self.most_common_rank_size() == 4
+    }
+
+    pub fn is_straight_flush(&self) -> bool {
+        self.is_all_consecutive() && self.is_all_same_suit()
     }
 
     fn rank_sets(&self) -> Vec<Rank> {
@@ -141,6 +153,7 @@ mod tests {
     fn flush_when_all_suits_the_same() {
         let hand = Hand::parse("2C 3C 6C 9C AC").unwrap();
         assert!(hand.is_flush());
+        assert!(!hand.is_straight_flush());
     }
 
     #[test]
@@ -153,12 +166,14 @@ mod tests {
     fn straight_when_all_consecutive() {
         let hand = Hand::parse("6C 3C 4C 5D 2S").unwrap();
         assert!(hand.is_straight());
+        assert!(!hand.is_straight_flush());
     }
 
     #[test]
     fn wraparound_straight() {
         let hand = Hand::parse("AC 3C 4C 5D 2S").unwrap();
         assert!(hand.is_straight());
+        assert!(!hand.is_straight_flush());
     }
 
     #[test]
@@ -195,6 +210,36 @@ mod tests {
     fn test_three_of_a_kind() {
         let hand = Hand::parse("5C 5S KC 5D 9S").unwrap();
         assert!(hand.is_three_of_a_kind());
+    }
+
+    #[test]
+    fn test_full_house() {
+        let hand = Hand::parse("5C 5S KC 5D KS").unwrap();
+        assert!(hand.is_full_house());
+    }
+
+    #[test]
+    fn test_not_full_house() {
+        let hand = Hand::parse("5C 5S KC 5D 5H").unwrap();
+        assert!(!hand.is_full_house());
+    }
+
+    #[test]
+    fn test_four_of_a_kind() {
+        let hand = Hand::parse("5C 5S KC 5D 5H").unwrap();
+        assert!(hand.is_four_of_a_kind());
+    }
+
+    #[test]
+    fn test_not_four_of_a_kind() {
+        let hand = Hand::parse("5C 5S KC 5D KS").unwrap();
+        assert!(!hand.is_four_of_a_kind());
+    }
+
+    #[test]
+    fn test_straight_flush() {
+        let hand = Hand::parse("3S 5S 4S 7S 6S").unwrap();
+        assert!(hand.is_straight_flush());
     }
 }
 
