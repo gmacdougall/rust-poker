@@ -9,6 +9,19 @@ pub struct Hand {
     cards: Vec<Card>,
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum HandRank {
+    HighCard,
+    Pair,
+    TwoPair,
+    ThreeOfAKind,
+    Straight,
+    Flush,
+    FullHouse,
+    FourOfAKind,
+    StraightFlush,
+}
+
 impl Hand {
     pub fn parse(str: &str) -> Result<Hand, String> {
         let vec: Vec<Card> = match str.split(" ").map(|c| Card::parse(c)).collect() {
@@ -23,35 +36,57 @@ impl Hand {
         Ok(Hand { cards: vec })
     }
 
-    pub fn is_pair(&self) -> bool {
+    pub fn rank(&self) -> HandRank {
+        if self.is_straight_flush() {
+            HandRank::StraightFlush
+        } else if self.is_four_of_a_kind() {
+            HandRank::FourOfAKind
+        } else if self.is_full_house() {
+            HandRank::FullHouse
+        } else if self.is_flush() {
+            HandRank::Flush
+        } else if self.is_straight() {
+            HandRank::Straight
+        } else if self.is_three_of_a_kind() {
+            HandRank::ThreeOfAKind
+        } else if self.is_two_pair() {
+            HandRank::TwoPair
+        } else if self.is_pair() {
+            HandRank::Pair
+        } else {
+            HandRank::HighCard
+        }
+    }
+
+    fn is_pair(&self) -> bool {
         self.rank_sets().len() == 4
     }
 
-    pub fn is_two_pair(&self) -> bool {
+    fn is_two_pair(&self) -> bool {
         self.rank_sets().len() == 3 && self.most_common_rank_size() == 2
     }
 
-    pub fn is_three_of_a_kind(&self) -> bool {
+    fn is_three_of_a_kind(&self) -> bool {
         self.rank_sets().len() == 3 && self.most_common_rank_size() == 3
     }
 
-    pub fn is_straight(&self) -> bool {
+    fn is_straight(&self) -> bool {
         self.is_all_consecutive()
     }
 
-    pub fn is_flush(&self) -> bool {
+    fn is_flush(&self) -> bool {
         self.is_all_same_suit()
     }
 
-    pub fn is_full_house(&self) -> bool {
+    fn is_full_house(&self) -> bool {
         self.rank_sets().len() == 2 && self.most_common_rank_size() == 3
     }
 
-    pub fn is_four_of_a_kind(&self) -> bool {
+    fn is_four_of_a_kind(&self) -> bool {
         self.rank_sets().len() == 2 && self.most_common_rank_size() == 4
     }
 
-    pub fn is_straight_flush(&self) -> bool {
+    fn is_straight_flush(&self) -> bool {
         self.is_all_consecutive() && self.is_all_same_suit()
     }
 
@@ -150,96 +185,63 @@ mod tests {
     }
 
     #[test]
-    fn flush_when_all_suits_the_same() {
-        let hand = Hand::parse("2C 3C 6C 9C AC").unwrap();
-        assert!(hand.is_flush());
-        assert!(!hand.is_straight_flush());
-    }
-
-    #[test]
-    fn not_flush_when_all_suits_not_the_same() {
-        let hand = Hand::parse("2C 3C 6H 9C AC").unwrap();
-        assert!(!hand.is_flush());
-    }
-
-    #[test]
-    fn straight_when_all_consecutive() {
-        let hand = Hand::parse("6C 3C 4C 5D 2S").unwrap();
-        assert!(hand.is_straight());
-        assert!(!hand.is_straight_flush());
-    }
-
-    #[test]
     fn wraparound_straight() {
         let hand = Hand::parse("AC 3C 4C 5D 2S").unwrap();
-        assert!(hand.is_straight());
-        assert!(!hand.is_straight_flush());
+        assert_eq!(HandRank::Straight, hand.rank());
     }
 
     #[test]
-    fn test_not_pair() {
+    fn test_high_card() {
         let hand = Hand::parse("2C JS 9C 5D 6S").unwrap();
-        assert!(!hand.is_pair());
+        assert_eq!(HandRank::HighCard, hand.rank());
     }
 
     #[test]
     fn test_pair() {
         let hand = Hand::parse("2C 2S 9C 5D 6S").unwrap();
-        assert!(hand.is_pair());
+        assert_eq!(HandRank::Pair, hand.rank());
     }
 
     #[test]
     fn test_two_pair() {
         let hand = Hand::parse("2C 5S 9C 5D 9S").unwrap();
-        assert!(hand.is_two_pair());
-    }
-
-    #[test]
-    fn test_not_two_pair() {
-        let hand = Hand::parse("5C 5S KC 5D 9S").unwrap();
-        assert!(!hand.is_two_pair());
-    }
-
-    #[test]
-    fn test_not_three_of_a_kind() {
-        let hand = Hand::parse("2C 5S 9C 5D 9S").unwrap();
-        assert!(!hand.is_three_of_a_kind());
+        assert_eq!(HandRank::TwoPair, hand.rank());
     }
 
     #[test]
     fn test_three_of_a_kind() {
         let hand = Hand::parse("5C 5S KC 5D 9S").unwrap();
-        assert!(hand.is_three_of_a_kind());
+        assert_eq!(HandRank::ThreeOfAKind, hand.rank());
+    }
+
+    #[test]
+    fn straight_when_all_consecutive() {
+        let hand = Hand::parse("6C 3C 4C 5D 2S").unwrap();
+        assert_eq!(HandRank::Straight, hand.rank());
+    }
+
+    #[test]
+    fn flush_when_all_suits_the_same() {
+        let hand = Hand::parse("2C 3C 6C 9C AC").unwrap();
+        assert_eq!(HandRank::Flush, hand.rank());
     }
 
     #[test]
     fn test_full_house() {
         let hand = Hand::parse("5C 5S KC 5D KS").unwrap();
-        assert!(hand.is_full_house());
-    }
-
-    #[test]
-    fn test_not_full_house() {
-        let hand = Hand::parse("5C 5S KC 5D 5H").unwrap();
-        assert!(!hand.is_full_house());
+        assert_eq!(HandRank::FullHouse, hand.rank());
     }
 
     #[test]
     fn test_four_of_a_kind() {
         let hand = Hand::parse("5C 5S KC 5D 5H").unwrap();
-        assert!(hand.is_four_of_a_kind());
-    }
-
-    #[test]
-    fn test_not_four_of_a_kind() {
-        let hand = Hand::parse("5C 5S KC 5D KS").unwrap();
-        assert!(!hand.is_four_of_a_kind());
+        assert_eq!(HandRank::FourOfAKind, hand.rank());
     }
 
     #[test]
     fn test_straight_flush() {
         let hand = Hand::parse("3S 5S 4S 7S 6S").unwrap();
-        assert!(hand.is_straight_flush());
+        assert_eq!(HandRank::StraightFlush, hand.rank());
     }
 }
 
