@@ -1,13 +1,10 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
 use crate::poker::card::Card;
 use crate::poker::card::Rank;
 use crate::poker::card::Suit;
-
-pub struct Hand {
-    cards: Vec<Card>,
-}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum HandRank {
@@ -38,6 +35,31 @@ impl HandRank {
     }
 }
 
+pub struct Hand {
+    cards: Vec<Card>,
+}
+
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Hand) -> Ordering {
+        self.value().cmp(&other.value())
+    }
+}
+
+impl PartialOrd for Hand {
+    fn partial_cmp(&self, other: &Hand) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Hand {
+    fn eq(&self, other: &Hand) -> bool {
+        self.value() == other.value()
+    }
+}
+
+impl Eq for Hand {}
+
 impl Hand {
     pub fn parse(str: &str) -> Result<Hand, String> {
         let vec: Vec<Card> = match str.split(" ").map(|c| Card::parse(c)).collect() {
@@ -52,29 +74,55 @@ impl Hand {
         Ok(Hand { cards: vec })
     }
 
+    // Value Explanation (40 bits total)
+    // - 10. Rank of Hand (4 bits)
+    // - 9. Rank of 4x combination (4 bits)
+    // - 8. Rank of 3x Cards (4 bits)
+    // - 7. Rank of High Pair (4 bits)
+    // - 6. Rank of Low Pair, 0 if only one pair(4 bits)
+    // - 5. Rank of highest single card (4 bits)
+    // - 4. Rank of second highest single card (4 bits)
+    // - 3. Rank of third highest single card (4 bits)
+    // - 2. Rank of fourth highest single card (4 bits)
+    // - 1. Rank of fifth highest single card (4 bits)
     pub fn value(&self) -> i64 {
         let frequencies: HashMap<&Rank, i64> = self.rank_sizes();
-        let mut ace_rotate = 0;
 
-        if !self.is_wraparound_straight() {
-            ace_rotate = 3 * 13;
+        let mut four_rank: i64 = 0;
+        let mut three_rank: i64 = 0;
+        let mut pairs = vec![];
+        let mut singles = vec![];
+
+        for (key, val) in self.rank_sizes() {
+            if val == 4 {
+                four_rank = key.value();
+            } else if val == 3 {
+                three_rank = key.value();
+            } else if val == 2 {
+                pairs.push(key.value());
+            } else {
+                singles.push(key.value());
+            }
+        }
+
+        pairs.sort();
+        singles.sort();
+
+        if self.is_wraparound_straight() {
+            return self.rank().value().rotate_left(4 * 9);
         }
 
         // FIXME: Make Less Gross
-        self.rank().value().rotate_left(3 * 14) |
-            frequencies.get(&Rank::Ace).unwrap_or(&0).rotate_left(ace_rotate) |
-            frequencies.get(&Rank::King).unwrap_or(&0).rotate_left(3 * 12) |
-            frequencies.get(&Rank::Queen).unwrap_or(&0).rotate_left(3 * 11) |
-            frequencies.get(&Rank::Jack).unwrap_or(&0).rotate_left(3 * 10) |
-            frequencies.get(&Rank::Ten).unwrap_or(&0).rotate_left(3 * 9) |
-            frequencies.get(&Rank::Nine).unwrap_or(&0).rotate_left(3 * 8) |
-            frequencies.get(&Rank::Eight).unwrap_or(&0).rotate_left(3 * 7) |
-            frequencies.get(&Rank::Seven).unwrap_or(&0).rotate_left(3 * 6) |
-            frequencies.get(&Rank::Six).unwrap_or(&0).rotate_left(3 * 5) |
-            frequencies.get(&Rank::Five).unwrap_or(&0).rotate_left(3 * 4) |
-            frequencies.get(&Rank::Four).unwrap_or(&0).rotate_left(3 * 3) |
-            frequencies.get(&Rank::Three).unwrap_or(&0).rotate_left(3 * 2) |
-            frequencies.get(&Rank::Two).unwrap_or(&0).rotate_left(3 * 1)
+        self.rank().value().rotate_left(4 * 9) |
+            four_rank.rotate_left(4 * 8) |
+            three_rank.rotate_left(4 * 7) |
+            pairs.get(1).unwrap_or(&0).rotate_left(4 * 6) |
+            pairs.get(0).unwrap_or(&0).rotate_left(4 * 5) |
+            singles.get(4).unwrap_or(&0).rotate_left(4 * 3) |
+            singles.get(3).unwrap_or(&0).rotate_left(4 * 2) |
+            singles.get(2).unwrap_or(&0).rotate_left(4 * 2) |
+            singles.get(1).unwrap_or(&0).rotate_left(4 * 1) |
+            singles.get(0).unwrap_or(&0)
     }
 
     pub fn rank(&self) -> HandRank {
@@ -240,77 +288,134 @@ mod tests {
     fn test_high_card() {
         let hand = Hand::parse("2C JS 9C 5D 6S").unwrap();
         assert_eq!(HandRank::HighCard, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "10100110010")
     }
 
     #[test]
     fn test_pair() {
         let hand = Hand::parse("2C 2S 9C 5D 6S").unwrap();
         assert_eq!(HandRank::Pair, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "100000100110020")
     }
 
     #[test]
     fn test_two_pair() {
         let hand = Hand::parse("2C 5S 9C 5D 9S").unwrap();
         assert_eq!(HandRank::TwoPair, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "200000200020010")
     }
 
     #[test]
     fn test_three_of_a_kind() {
         let hand = Hand::parse("5C 5S KC 5D 9S").unwrap();
         assert_eq!(HandRank::ThreeOfAKind, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "301000100030000")
     }
 
     #[test]
     fn straight_when_all_consecutive() {
         let hand = Hand::parse("6C 3C 4C 5D 2S").unwrap();
         assert_eq!(HandRank::Straight, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "400000000111110")
     }
 
     #[test]
     fn wraparound_straight() {
         let hand = Hand::parse("AC 3C 4C 5D 2S").unwrap();
         assert_eq!(HandRank::Straight, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "400000000011111")
     }
 
     #[test]
     fn flush_when_all_suits_the_same() {
         let hand = Hand::parse("2C 3C 6C 9C AC").unwrap();
         assert_eq!(HandRank::Flush, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "510000100100110")
     }
 
     #[test]
     fn test_full_house() {
         let hand = Hand::parse("5C 5S KC 5D KS").unwrap();
         assert_eq!(HandRank::FullHouse, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "602000000030000")
     }
 
     #[test]
     fn test_four_of_a_kind() {
         let hand = Hand::parse("5C 5S KC 5D 5H").unwrap();
         assert_eq!(HandRank::FourOfAKind, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "701000000040000")
     }
 
     #[test]
     fn test_straight_flush() {
         let hand = Hand::parse("3S 5S 4S 7S 6S").unwrap();
         assert_eq!(HandRank::StraightFlush, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "1000000001111100")
     }
 
     #[test]
     fn test_wraparound_straight_flush() {
         let hand = Hand::parse("3S 5S 4S AS 2S").unwrap();
         assert_eq!(HandRank::StraightFlush, hand.rank());
-        assert_eq!(format!("{:o}", hand.value()), "1000000000011111")
+    }
+
+    #[test]
+    fn test_comparison_of_different_hands() {
+        let straight_flush = Hand::parse("3S 5S 4S AS 2S").unwrap();
+        let four_of_a_kind = Hand::parse("5C 5S KC 5D 5H").unwrap();
+        let full_house = Hand::parse("5C 5S KC 5D KS").unwrap();
+        let flush = Hand::parse("2C 3C 6C 9C AC").unwrap();
+        let straight = Hand::parse("6C 3C 4C 5D 2S").unwrap();
+        let three_of_a_kind = Hand::parse("5C 5S KC 5D 9S").unwrap();
+        let two_pair = Hand::parse("2C 5S 9C 5D 9S").unwrap();
+        let pair = Hand::parse("2C 2S 9C 5D 6S").unwrap();
+        let high_card = Hand::parse("2C JS 9C 5D 6S").unwrap();
+
+        assert!(straight_flush > four_of_a_kind);
+        assert!(four_of_a_kind > full_house);
+        assert!(full_house > flush);
+        assert!(flush > straight);
+        assert!(straight > three_of_a_kind);
+        assert!(three_of_a_kind > two_pair);
+        assert!(two_pair > pair);
+        assert!(pair > high_card);
+    }
+
+    #[test]
+    fn test_comparison_of_different_straight_flushes() {
+        let ace_high = Hand::parse("TC JC QC KC AC").unwrap();
+        let king_high = Hand::parse("KS JS QS 9S TS").unwrap();
+        let five_high = Hand::parse("AD 2D 3D 4D 5D").unwrap();
+
+        assert!(ace_high > king_high);
+        assert!(king_high > five_high);
+    }
+
+    #[test]
+    fn test_comparison_of_different_straights() {
+        let ace_high_straight = Hand::parse("TC JC QC KD AS").unwrap();
+        let king_high_straight = Hand::parse("KC JC QC 9D TS").unwrap();
+        let five_high_straight = Hand::parse("AC 2C 3C 4D 5S").unwrap();
+
+        assert!(ace_high_straight > king_high_straight);
+        assert!(king_high_straight > five_high_straight);
+    }
+
+    #[test]
+    fn test_comparison_of_different_four_of_a_kind() {
+        let four_tens = Hand::parse("TC TS TH TD 2S").unwrap();
+        let four_nines = Hand::parse("9C 9S 9H 9D AS").unwrap();
+
+        assert!(four_tens > four_nines);
+    }
+
+    #[test]
+    fn test_comparison_of_different_full_houses() {
+        let threes_full_of_kings = Hand::parse("3C 3H 3C KD KS").unwrap();
+        let threes_full_of_fives = Hand::parse("3C 3H 3C 5D 5S").unwrap();
+        let sixes_full_of_eights = Hand::parse("6C 6S 6H 8D 8S").unwrap();
+
+        assert!(sixes_full_of_eights > threes_full_of_kings);
+        assert!(threes_full_of_kings > threes_full_of_fives);
+    }
+
+    #[test]
+    fn test_comparison_of_high_card() {
+        let king_high = Hand::parse("4H 5C 9D KS JS").unwrap();
+        let nine_high = Hand::parse("4H 5C 9D 6S 2S").unwrap();
+
+        assert!(king_high > nine_high);
     }
 }
 

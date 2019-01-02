@@ -16,7 +16,7 @@ pub enum Rank {
 }
 
 impl Rank {
-    pub fn value(&self) -> i32 {
+    pub fn value(&self) -> i64 {
         match *self {
             Rank::Two => 2,
             Rank::Three => 3,
