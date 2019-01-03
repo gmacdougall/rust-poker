@@ -213,8 +213,8 @@ impl Hand {
         self.is_straight() && self.is_flush()
     }
 
-    fn rank_sets(&self) -> Vec<Rank> {
-        let mut ranks: Vec<Rank> = self.cards.iter().cloned().map(|c| c.rank).collect();
+    fn rank_sets(&self) -> Vec<&Rank> {
+        let mut ranks: Vec<&Rank> = self.cards.iter().map(|c| &c.rank).collect();
         ranks.sort();
         ranks.dedup();
         ranks
@@ -231,19 +231,19 @@ impl Hand {
     }
 
     fn most_common_rank_size(&self) -> i64 {
-        self.rank_sizes().values().max().unwrap().clone()
+        *self.rank_sizes().values().max().unwrap()
     }
 
     fn is_wraparound_straight(&self) -> bool {
-        let ranks: Vec<Rank> = self.rank_sets();
+        let ranks: Vec<&Rank> = self.rank_sets();
         if ranks.len() != 5 {
             return false;
         }
-        (ranks[3] == Rank::Five && ranks[4] == Rank::Ace)
+        (*ranks[3] == Rank::Five && *ranks[4] == Rank::Ace)
     }
 
     fn is_all_consecutive(&self) -> bool {
-        let ranks: Vec<Rank> = self.rank_sets();
+        let ranks: Vec<&Rank> = self.rank_sets();
         if ranks.len() != 5 {
             return false;
         }
