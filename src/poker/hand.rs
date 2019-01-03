@@ -3,59 +3,10 @@ use std::collections::HashMap;
 use std::fmt;
 
 use crate::poker::card::Card;
-use crate::poker::card::Rank;
+use crate::poker::hand_rank::HandRank;
+use crate::poker::rank::Rank;
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum HandRank {
-    HighCard,
-    Pair,
-    TwoPair,
-    ThreeOfAKind,
-    Straight,
-    Flush,
-    FullHouse,
-    FourOfAKind,
-    StraightFlush,
-}
-
-impl HandRank {
-    pub fn value(&self) -> i64 {
-        match *self {
-            HandRank::HighCard => 0,
-            HandRank::Pair => 1,
-            HandRank::TwoPair => 2,
-            HandRank::ThreeOfAKind => 3,
-            HandRank::Straight => 4,
-            HandRank::Flush => 5,
-            HandRank::FullHouse => 6,
-            HandRank::FourOfAKind => 7,
-            HandRank::StraightFlush => 8,
-        }
-    }
-}
-
-impl fmt::Display for HandRank {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: Find way to simplify
-        write!(
-            f,
-            "{}",
-            match &self {
-                HandRank::HighCard => "High Card",
-                HandRank::Pair => "Pair",
-                HandRank::TwoPair => "Two Pair",
-                HandRank::ThreeOfAKind => "Three of a Kind",
-                HandRank::Straight => "Straight",
-                HandRank::Flush => "Flush",
-                HandRank::FullHouse => "Full House",
-                HandRank::FourOfAKind => "Four of a Kind",
-                HandRank::StraightFlush => "Straight Flush",
-            }
-        )
-    }
-}
-
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Hand {
     cards: Vec<Card>,
 }
@@ -259,7 +210,7 @@ impl Hand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::poker::card::Suit;
+    use crate::poker::suit::Suit;
 
     #[test]
     fn hand_contains_five_cards() {
