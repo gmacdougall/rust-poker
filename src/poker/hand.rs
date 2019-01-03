@@ -131,8 +131,8 @@ impl Hand {
             three_rank.rotate_left(4 * 7) |
             pairs.get(1).unwrap_or(&0).rotate_left(4 * 6) |
             pairs.get(0).unwrap_or(&0).rotate_left(4 * 5) |
-            singles.get(4).unwrap_or(&0).rotate_left(4 * 3) |
-            singles.get(3).unwrap_or(&0).rotate_left(4 * 2) |
+            singles.get(4).unwrap_or(&0).rotate_left(4 * 4) |
+            singles.get(3).unwrap_or(&0).rotate_left(4 * 3) |
             singles.get(2).unwrap_or(&0).rotate_left(4 * 2) |
             singles.get(1).unwrap_or(&0).rotate_left(4 * 1) |
             singles.get(0).unwrap_or(&0)
@@ -429,7 +429,11 @@ mod tests {
         let king_high = Hand::parse("4H 5C 9D KS JS").unwrap();
         let nine_high = Hand::parse("4H 5C 9D 6S 2S").unwrap();
 
+        let h1 = Hand::parse("4D JH KD 2C 7D").unwrap();
+        let h2 = Hand::parse("5C 4C KC 2D JC").unwrap();
+
         assert!(king_high > nine_high);
+        assert!(h1 > h2);
     }
 }
 
