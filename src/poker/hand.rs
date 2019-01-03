@@ -1,10 +1,9 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::collections::HashSet;
+use std::fmt;
 
 use crate::poker::card::Card;
 use crate::poker::card::Rank;
-use crate::poker::card::Suit;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum HandRank {
@@ -35,6 +34,7 @@ impl HandRank {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Hand {
     cards: Vec<Card>,
 }
@@ -59,6 +59,21 @@ impl PartialEq for Hand {
 }
 
 impl Eq for Hand {}
+
+impl fmt::Display for Hand {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: Find way to simplify
+        write!(
+            f,
+            "{} {} {} {} {}",
+            self.cards[0],
+            self.cards[1],
+            self.cards[2],
+            self.cards[3],
+            self.cards[4]
+        )
+    }
+}
 
 impl Hand {
     pub fn parse(str: &str) -> Result<Hand, String> {
@@ -86,8 +101,6 @@ impl Hand {
     // - 2. Rank of fourth highest single card (4 bits)
     // - 1. Rank of fifth highest single card (4 bits)
     pub fn value(&self) -> i64 {
-        let frequencies: HashMap<&Rank, i64> = self.rank_sizes();
-
         let mut four_rank: i64 = 0;
         let mut three_rank: i64 = 0;
         let mut pairs = vec![];
@@ -225,6 +238,7 @@ impl Hand {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::poker::card::Suit;
 
     #[test]
     fn hand_contains_five_cards() {

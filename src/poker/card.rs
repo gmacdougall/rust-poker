@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub enum Rank {
     Two,
@@ -35,6 +37,27 @@ impl Rank {
     }
 }
 
+impl fmt::Display for Rank {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match *self {
+            Rank::Two => '2',
+            Rank::Three => '3',
+            Rank::Four => '4',
+            Rank::Five => '5',
+            Rank::Six => '6',
+            Rank::Seven => '7',
+            Rank::Eight => '8',
+            Rank::Nine => '9',
+            Rank::Ten => 'T',
+            Rank::Jack => 'J',
+            Rank::Queen => 'Q',
+            Rank::King => 'K',
+            Rank::Ace => 'A',
+        };
+        write!(f, "{}", s)
+    }
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Suit {
     Clubs = 0,
@@ -43,10 +66,28 @@ pub enum Suit {
     Spades = 3,
 }
 
-#[derive(Clone)]
+impl fmt::Display for Suit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match *self {
+            Suit::Clubs => 'C',
+            Suit::Diamonds => 'D',
+            Suit::Hearts => 'H',
+            Suit::Spades => 'S',
+        };
+        write!(f, "{}", s)
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Card {
     pub rank: Rank,
     pub suit: Suit,
+}
+
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}{}", self.rank, self.suit)
+    }
 }
 
 impl Card {
