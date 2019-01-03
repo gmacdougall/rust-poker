@@ -34,6 +34,27 @@ impl HandRank {
     }
 }
 
+impl fmt::Display for HandRank {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: Find way to simplify
+        write!(
+            f,
+            "{}",
+            match &self {
+                HandRank::HighCard => "High Card",
+                HandRank::Pair => "Pair",
+                HandRank::TwoPair => "Two Pair",
+                HandRank::ThreeOfAKind => "Three of a Kind",
+                HandRank::Straight => "Straight",
+                HandRank::Flush => "Flush",
+                HandRank::FullHouse => "Full House",
+                HandRank::FourOfAKind => "Four of a Kind",
+                HandRank::StraightFlush => "Straight Flush",
+            }
+        )
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Hand {
     cards: Vec<Card>,
