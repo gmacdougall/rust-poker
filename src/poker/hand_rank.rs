@@ -37,7 +37,7 @@ impl fmt::Display for HandRank {
             "{}",
             match &self {
                 HandRank::HighCard => "High Card",
-                HandRank::Pair => "Pair",
+                HandRank::Pair => "One Pair",
                 HandRank::TwoPair => "Two Pair",
                 HandRank::ThreeOfAKind => "Three of a Kind",
                 HandRank::Straight => "Straight",
