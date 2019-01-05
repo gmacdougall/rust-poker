@@ -38,15 +38,14 @@ impl Eq for Hand {}
 
 impl fmt::Display for Hand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: Find way to simplify
         write!(
             f,
-            "{} {} {} {} {}",
-            self.cards[0],
-            self.cards[1],
-            self.cards[2],
-            self.cards[3],
-            self.cards[4]
+            "{}",
+            self.cards
+                .iter()
+                .map(|c| c.to_string())
+                .collect::<Vec<String>>()
+                .join(" "),
         )
     }
 }
