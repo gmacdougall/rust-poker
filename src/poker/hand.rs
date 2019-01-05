@@ -14,7 +14,11 @@ pub struct Hand {
 
 impl Ord for Hand {
     fn cmp(&self, other: &Hand) -> Ordering {
-        self.value().cmp(&other.value())
+        self.rank().value().cmp(
+            &other.rank().value()
+        ).then(
+            self.value().cmp(&other.value())
+        )
     }
 }
 
@@ -61,18 +65,7 @@ impl Hand {
         Ok(Hand { cards: vec })
     }
 
-    // Value Explanation (40 bits total)
-    // - 10. Rank of Hand (4 bits)
-    // - 9. Rank of 4x combination (4 bits)
-    // - 8. Rank of 3x Cards (4 bits)
-    // - 7. Rank of High Pair (4 bits)
-    // - 6. Rank of Low Pair, 0 if only one pair(4 bits)
-    // - 5. Rank of highest single card (4 bits)
-    // - 4. Rank of second highest single card (4 bits)
-    // - 3. Rank of third highest single card (4 bits)
-    // - 2. Rank of fourth highest single card (4 bits)
-    // - 1. Rank of fifth highest single card (4 bits)
-    pub fn value(&self) -> i64 {
+    pub fn value(&self) -> [i64; 9] {
         let mut four_rank: i64 = 0;
         let mut three_rank: i64 = 0;
         let mut pairs = vec![];
@@ -94,20 +87,20 @@ impl Hand {
         singles.sort();
 
         if self.is_wraparound_straight() {
-            return self.rank().value().rotate_left(4 * 9);
+            return [0, 0, 0, 0, 5, 4, 3, 2, 1];
         }
 
-        // FIXME: Make Less Gross
-        self.rank().value().rotate_left(4 * 9) |
-            four_rank.rotate_left(4 * 8) |
-            three_rank.rotate_left(4 * 7) |
-            pairs.get(1).unwrap_or(&0).rotate_left(4 * 6) |
-            pairs.get(0).unwrap_or(&0).rotate_left(4 * 5) |
-            singles.get(4).unwrap_or(&0).rotate_left(4 * 4) |
-            singles.get(3).unwrap_or(&0).rotate_left(4 * 3) |
-            singles.get(2).unwrap_or(&0).rotate_left(4 * 2) |
-            singles.get(1).unwrap_or(&0).rotate_left(4 * 1) |
-            singles.get(0).unwrap_or(&0)
+        [
+            four_rank,
+            three_rank,
+            *pairs.get(1).unwrap_or(&0),
+            *pairs.get(0).unwrap_or(&0),
+            *singles.get(4).unwrap_or(&0),
+            *singles.get(3).unwrap_or(&0),
+            *singles.get(2).unwrap_or(&0),
+            *singles.get(1).unwrap_or(&0),
+            *singles.get(0).unwrap_or(&0)
+        ]
     }
 
     pub fn rank(&self) -> HandRank {
@@ -187,23 +180,18 @@ impl Hand {
 
     fn is_wraparound_straight(&self) -> bool {
         let ranks: Vec<&Rank> = self.rank_sets();
-        if ranks.len() != 5 {
-            return false;
-        }
-        (*ranks[3] == Rank::Five && *ranks[4] == Rank::Ace)
+
+        ranks.len() == 5 && (*ranks[3] == Rank::Five && *ranks[4] == Rank::Ace)
     }
 
     fn is_all_consecutive(&self) -> bool {
         let ranks: Vec<&Rank> = self.rank_sets();
-        if ranks.len() != 5 {
-            return false;
-        }
-        (ranks[4].value() - ranks[0].value() == 4)
+
+        ranks.len() == 5 && (ranks[4].value() - ranks[0].value() == 4)
     }
 
     fn is_all_same_suit(&self) -> bool {
-        let suit = &self.cards[0].suit;
-        self.cards.iter().all(|c| &c.suit == suit)
+        self.cards.iter().all(|c| &c.suit == &self.cards[0].suit)
     }
 }
 
