@@ -6,11 +6,9 @@ use crate::poker::card::Card;
 use crate::poker::hand_rank::HandRank;
 use crate::poker::rank::Rank;
 
-#[derive(Debug)]
 pub struct Hand {
     cards: Vec<Card>,
 }
-
 
 impl Ord for Hand {
     fn cmp(&self, other: &Hand) -> Ordering {
