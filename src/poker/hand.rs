@@ -28,7 +28,8 @@ impl PartialOrd for Hand {
 
 impl PartialEq for Hand {
     fn eq(&self, other: &Hand) -> bool {
-        self.value() == other.value()
+        self.value() == other.value() &&
+            self.rank() == other.rank()
     }
 }
 
@@ -391,6 +392,15 @@ mod tests {
 
         assert!(king_high > nine_high);
         assert!(h1 > h2);
+    }
+
+    #[test]
+    fn test_comparison_of_flush_vs_non_flush() {
+        let flush = Hand::parse("2H QH 6H KH AH").unwrap();
+        let non_flush = Hand::parse("KD AS 2C 6D QS").unwrap();
+
+        assert!(flush > non_flush);
+        assert_ne!(flush, non_flush);
     }
 }
 
